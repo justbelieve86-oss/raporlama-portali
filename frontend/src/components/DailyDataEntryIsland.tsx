@@ -1821,7 +1821,7 @@ function SortableDailyTableRow({
   const calcLabel = kpi.calculation_type === 'percentage' ? 'Yüzde' : kpi.calculation_type === 'cumulative' ? 'Kümülatif' : kpi.calculation_type === 'formula' ? 'Formül' : isTarget ? 'Hedef' : 'Doğrudan';
   const progressTarget = isTarget && targetVal && targetVal > 0 ? targetVal : null;
   const currentCum = kpi.only_cumulative === true ? (Number(cumulativeOverride) || 0) : (Number(cumulative) || 0);
-  const { isTl: _isTl } = getUnitMeta(unit);
+  const { isTl, isPercent, unitLabel } = getUnitMeta(unit);
   const progressPct = progressTarget ? Math.max(0, Math.round((currentCum / progressTarget) * 100)) : null;
 
   const dailyInputId = `daily-${kpi.id}-${day}`;
