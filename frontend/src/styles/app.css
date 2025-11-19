@@ -1,0 +1,19 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/forms";
+@plugin "@tailwindcss/typography";
+
+/* Admin ortak kart ve grid sınıfları */
+@layer components {
+  .admin-card {
+    @apply bg-white shadow-sm border border-gray-200 transition-colors duration-300;
+  }
+  .admin-card-lg {
+    @apply bg-white shadow-sm border border-gray-200 transition-colors duration-300;
+  }
+  .admin-card-grid-3 {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6;
+  }
+  .admin-card-grid-4 {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6;
+  }
+}

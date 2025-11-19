@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Builds and output
+dist/
+
+# Environment files
+.env
+.env.*
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
+
+# OS/editor artifacts
+.DS_Store
+.vscode/
+.astro/
+
+# Vercel build output
+.vercel/
+frontend/.vercel/
+backend/.vercel/

@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: raporlama-backend
+    env: node
+    repo: https://github.com/justbelieve86-oss/raporlama-portali
+    branch: main
+    rootDir: backend
+    buildCommand: "npm install"
+    startCommand: "npm start"
+    autoDeploy: true
+    envVars:
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+      NODE_ENV: production
+      PORT: ${PORT}

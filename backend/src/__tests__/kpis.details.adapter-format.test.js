@@ -1,0 +1,75 @@
+const request = require('supertest');
+
+// Auth client mock: geçerli kullanıcı döndür
+jest.mock('../supabaseAuth', () => ({
+  createAuthClient: () => ({
+    auth: {
+      getUser: jest.fn(async () => ({ data: { user: { id: 'user-123', role: 'user' } }, error: null }))
+    }
+  })
+}));
+
+// Supabase mock: kpis.details için in() argümanlarını yakala ve sahte data döndür
+jest.mock('../supabase', () => {
+  const __captures = { kpisDetailsInArgs: { called: false, args: null } };
+
+  const supabase = {
+    __captures,
+    from: jest.fn((table) => {
+      if (table === 'profiles') {
+        const q = { table };
+        q.select = jest.fn(() => q);
+        q.eq = jest.fn(() => q);
+        q.single = jest.fn(() => ({ then: (resolve) => resolve({ data: { role: 'user' }, error: null }) }));
+        return q;
+      }
+      if (table === 'kpis') {
+        const p = Promise.resolve({ data: [{ id: 'k1', name: 'KPI 1' }], error: null });
+        p.select = jest.fn(() => p);
+        p.in = jest.fn((column, values) => {
+          if (column === 'id') {
+            __captures.kpisDetailsInArgs.called = true;
+            __captures.kpisDetailsInArgs.args = values;
+          }
+          return p;
+        });
+        return p;
+      }
+      const p = Promise.resolve({ data: [], error: null });
+      p.select = jest.fn(() => p);
+      p.in = jest.fn(() => p);
+      return p;
+    })
+  };
+
+  return { supabase };
+});
+
+describe('Kpis details adapter-format ve kpi_ids trim', () => {
+  process.env.NODE_ENV = 'test';
+  const app = require('../index');
+
+  it('GET /api/kpis/details kpi_ids eksikse 400 ve BAD_REQUEST', async () => {
+    const res = await request(app)
+      .get('/api/kpis/details')
+      .set('Authorization', 'Bearer testtoken');
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toHaveProperty('status', 'fail');
+    expect(res.body).toHaveProperty('code', 'BAD_REQUEST');
+  });
+
+  it('GET /api/kpis/details kpi_ids trim ve boşları filtreler', async () => {
+    const uuid1 = '550e8400-e29b-41d4-a716-446655440000';
+    const uuid2 = '660e8400-e29b-41d4-a716-446655440001';
+    const res = await request(app)
+      .get('/api/kpis/details')
+      .query({ kpi_ids: ` ${uuid1} , , ${uuid2} ` })
+      .set('Authorization', 'Bearer testtoken');
+    expect(res.statusCode).toBe(200);
+    const { supabase } = require('../supabase');
+    expect(supabase.__captures.kpisDetailsInArgs.called).toBe(true);
+    expect(supabase.__captures.kpisDetailsInArgs.args).toEqual([uuid1, uuid2]);
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data?.items)).toBe(true);
+  });
+});

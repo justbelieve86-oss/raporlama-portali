@@ -1,0 +1,43 @@
+---
+import AppLayout from '@/layouts/AppLayout.astro';
+import Sidebar from '@/components/Sidebar';
+import PageHeader from '@/components/PageHeader';
+import DataEntryIsland from '@/components/DataEntryIsland';
+---
+
+<AppLayout title="2. El Veri Girişi">
+  <div class="flex h-screen bg-gray-50">
+    <!-- Sidebar -->
+    <Sidebar role="user" client:only="react" />
+    
+    <!-- Main Content -->
+    <div class="content-root flex-1 flex flex-col">
+      <!-- Header with UserProfileDropdown -->
+      <PageHeader client:only="react">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">2. El Veri Girişi</h1>
+          <p class="text-sm text-gray-600 mt-1">2. el verilerinizi sisteme girin ve güncelleyin. Performans takibi için veri kayıtlarınızı yönetin.</p>
+        </div>
+      </PageHeader>
+
+      <!-- Main Content Area -->
+      <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+        <!-- Üst kontrol çubuğu ve Dinamik KPI listesi (React parent island) -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+<DataEntryIsland client:only="react" brandCategory="ikinci-el-markalari" categoryFilter="İkinci El - Satış" />
+        </div>
+
+        <!-- Alt panel ve kaydet butonu -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+          <div class="min-h-[140px]"></div>
+          <div class="mt-4 flex justify-end">
+            <button class="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-emerald-600 text-white shadow hover:bg-emerald-700">
+              <span class="text-sm font-medium">Verileri Kaydet</span>
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</AppLayout>

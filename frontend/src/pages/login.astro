@@ -1,0 +1,7 @@
+---
+import LoginLayout from "@/layouts/LoginLayout.astro";
+import ModernLoginPage from "@/components/ModernLoginPage";
+---
+<LoginLayout>
+  <ModernLoginPage client:only="react" />
+</LoginLayout>

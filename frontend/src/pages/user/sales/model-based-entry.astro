@@ -1,0 +1,35 @@
+---
+import AppLayout from '@/layouts/AppLayout.astro';
+import Sidebar from '@/components/Sidebar';
+import PageHeader from '@/components/PageHeader';
+import ModelBasedSalesEntryIsland from '@/components/ModelBasedSalesEntryIsland';
+import RouteGuard from '@/components/RouteGuard';
+---
+
+<AppLayout title="Veri Girişi - Model Bazlı Satış">
+  <div class="flex h-screen bg-gray-50">
+    <!-- Sidebar -->
+    <Sidebar role="user" client:only="react" />
+    
+    <!-- Main Content -->
+    <div class="content-root flex-1 flex flex-col">
+      <!-- Header with UserProfileDropdown -->
+      <PageHeader client:only="react">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Veri Girişi - Model Bazlı Satış</h1>
+          <p class="text-sm text-gray-600 mt-1">Marka bazlı model satış verilerinizi günlük olarak girin ve takip edin.</p>
+        </div>
+      </PageHeader>
+
+      <!-- Main Content Area -->
+      <main class="flex-1 overflow-y-auto p-6 space-y-6">
+        <RouteGuard routePath="/user/sales/model-based-entry" client:only="react">
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <ModelBasedSalesEntryIsland brandCategory="satis-markalari" client:only="react" />
+          </div>
+        </RouteGuard>
+      </main>
+    </div>
+  </div>
+</AppLayout>
+

@@ -1,0 +1,29 @@
+---
+import AppLayout from '@/layouts/AppLayout.astro';
+import Sidebar from '@/components/Sidebar';
+import PageHeader from '@/components/PageHeader';
+import KpiManagement from '@/components/KpiManagement';
+---
+
+<AppLayout title="Yetkilendirme Ayarları - KPI Yönetimi">
+  <div class="flex h-screen bg-gray-50">
+    <!-- Sidebar -->
+    <Sidebar role="user" client:only="react" />
+    
+   <!-- Main Content Area -->
+    <div class="content-root flex-1 flex flex-col">
+      <!-- Page Header -->
+      <PageHeader client:only="react">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">KPI Yönetimi</h1>
+          <p class="text-sm text-gray-600 mt-1">Performans göstergelerini tanımlayın ve yönetin. KPI kategorileri ve hedeflerini ayarlayın.</p>
+        </div>
+      </PageHeader>
+
+      <!-- Main Content Area -->
+      <main class="flex-1 overflow-y-auto p-6">
+        <KpiManagement client:only="react" />
+      </main>
+    </div>
+  </div>
+</AppLayout>

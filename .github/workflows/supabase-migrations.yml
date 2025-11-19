@@ -1,0 +1,57 @@
+name: Supabase Migrations
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  db-push:
+    name: Apply Supabase migrations
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Check for secrets
+        id: check-secrets
+        continue-on-error: true
+        run: |
+          if [ -z "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ] || [ -z "${{ secrets.SUPABASE_PROJECT_REF }}" ]; then
+            echo "⚠️ Missing secrets SUPABASE_ACCESS_TOKEN or SUPABASE_PROJECT_REF"
+            echo "ℹ️ Skipping migration. Add secrets in GitHub Settings > Secrets and variables > Actions"
+            echo "::warning::Supabase secrets not configured. Migrations will be skipped."
+            echo "has_secrets=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "✅ Secrets found"
+          echo "has_secrets=true" >> $GITHUB_OUTPUT
+
+      - name: Link project
+        if: steps.check-secrets.outputs.has_secrets == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        continue-on-error: true
+        run: |
+          echo "🔗 Linking to Supabase project: $SUPABASE_PROJECT_REF"
+          supabase link --project-ref "$SUPABASE_PROJECT_REF" || (echo "❌ Failed to link project" && exit 1)
+
+      - name: Push migrations
+        if: steps.check-secrets.outputs.has_secrets == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        continue-on-error: true
+        run: |
+          echo "📤 Pushing database migrations..."
+          supabase db push || (echo "❌ Migration push failed" && exit 1)
+          echo "✅ Migrations applied successfully"

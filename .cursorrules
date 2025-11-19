@@ -1,0 +1,581 @@
+# Raporlama Project - Cursor Rules
+
+Bu dosya, projeye özel kodlama standartları, mimari desenler ve best practice'leri tanımlar.
+
+## 📋 Proje Genel Bilgileri
+
+- **Proje Adı**: Raporlama Portalı (KPI Reporting System)
+- **Stack**: Astro 5.x + React 19 (Frontend), Node.js + Express (Backend), Supabase/PostgreSQL
+- **Dil**: Türkçe (kullanıcı mesajları, yorumlar), İngilizce (kod, değişken isimleri)
+- **Deployment**: Frontend (Vercel), Backend (Render.com)
+
+---
+
+## 🏗️ Mimari Prensipler
+
+### Backend (Node.js/Express)
+- **Module System**: CommonJS (`require`/`module.exports`)
+- **Error Handling**: `catchAsync` wrapper kullan, `AppError` class ile custom hatalar
+- **Response Format**: Standart `responseHelpers` kullan (sendSuccess, sendError, sendList, sendCreated, vb.)
+- **Validation**: `validateInput` veya `validateWithSendError` middleware kullan
+- **Authentication**: `requireAuth` ve `requireAdmin` middleware'leri kullan
+- **Database**: Supabase client ile RLS (Row Level Security) farkındalığı
+
+### Frontend (Astro + React + TypeScript)
+- **Module System**: ES Modules (`import`/`export`)
+- **Type Safety**: TypeScript strict mode, tüm API response'ları için interface/type tanımla
+- **State Management**: TanStack Query (React Query) kullan
+- **Data Fetching**: `services/api.ts` içindeki fonksiyonları kullan
+- **Components**: React hooks pattern, Astro islands için `*Island.tsx` suffix
+- **Styling**: Tailwind CSS utility classes
+
+---
+
+## 📝 Naming Conventions
+
+### Dosya İsimlendirme
+- **Backend Routes**: `kebab-case.js` (örn: `kpi-ordering.js`, `auth.js`)
+- **Backend Middleware**: `camelCase.js` (örn: `errorHandler.js`, `auth.js`)
+- **Frontend Components**: `PascalCase.tsx` (örn: `DataEntryIsland.tsx`, `KpiManagement.tsx`)
+- **Frontend Pages**: `kebab-case.astro` (örn: `daily-data-entry.astro`)
+- **Frontend Hooks**: `camelCase.ts` `use` prefix ile (örn: `useKpiData.ts`, `useToast.ts`)
+- **Frontend Services**: `camelCase.ts` (örn: `api.ts`, `audit.ts`)
+- **Frontend Types**: `camelCase.ts` (örn: `kpi.ts`)
+- **Database Migrations**: `NNN_descriptive_name.sql` (örn: `044_add_brand_category_key.sql`)
+
+### Kod İsimlendirme
+- **Variables/Functions**: `camelCase` (örn: `getBrands`, `kpiIds`, `userRole`)
+- **Constants**: `UPPER_SNAKE_CASE` (örn: `ADMIN_EQUIVALENT`, `MAX_RETRY_COUNT`)
+- **Types/Interfaces**: `PascalCase` (örn: `KpiItem`, `User`, `Brand`)
+- **Component Props**: `PascalCase` type, `camelCase` props (örn: `type Props = { brandId: string }`)
+- **Database Columns**: `snake_case` (örn: `user_id`, `brand_id`, `kpi_id`, `created_at`)
+- **API Endpoints**: `kebab-case` (örn: `/api/kpi-ordering`, `/api/brands/:brandId/kpi-mappings`)
+
+---
+
+## 🔒 Güvenlik Kuralları
+
+### Authentication & Authorization
+- Tüm protected route'lar için `requireAuth` middleware kullan
+- Admin işlemleri için `requireAdmin` middleware kullan
+- Token'ları `Authorization: Bearer <token>` header'ında gönder
+- Frontend'de token'ları localStorage'da sakla, axios interceptor ile otomatik ekle
+- **Username/Email Login**: Backend `/api/auth/login` endpoint'i hem username hem email kabul eder
+  - Username ise RPC `get_email_by_username` ile email'e çevrilir
+  - Fallback olarak statik mapping kullanılabilir (development için)
+- **Token Refresh**: Frontend axios interceptor'da 401 hatasında otomatik token refresh dener
+  - Refresh başarısızsa `/login` sayfasına yönlendirir
+  - Token refresh sadece bir kez denenir (`__retry` flag ile)
+
+### Input Validation
+- Tüm user input'ları validate et (`validateInput` veya `validateWithSendError`)
+- String input'ları sanitize et (`sanitize: true` validation rule ile)
+- UUID validation için `type: 'uuid'` kullan
+- Email validation için `email: true` kullan
+
+### Database Security
+- RLS (Row Level Security) politikalarını her zaman göz önünde bulundur
+- Service role client'ı sadece admin işlemleri için kullan
+- User-specific query'lerde `user_id` filtresi ekle
+- Foreign key constraint'lerini kontrol et
+
+### Supabase Client Patterns
+- **Backend Service Client**: `backend/src/supabase.js` - Service role key ile (admin işlemleri için)
+- **Backend Auth Client**: `backend/src/supabaseAuth.js` - Anon key ile (token doğrulama için)
+- **Frontend Client**: `frontend/src/lib/supabase.ts` - Anon key ile (client-side auth için)
+- Service role client'ı asla frontend'de veya user-specific query'lerde kullanma
+- Auth client'ı sadece token doğrulama için kullan, data query'leri için service client kullan
+
+### Error Handling
+- Production'da hassas bilgi sızdırmayın (stack trace, internal error details)
+- Kullanıcıya Türkçe, anlaşılır hata mesajları göster
+- Error code'ları standart format kullan (örn: `VALIDATION_ERROR`, `NOT_FOUND`, `FORBIDDEN`)
+
+---
+
+## 📦 API Response Formatları
+
+### Başarılı Response
+```javascript
+{
+  success: true,
+  status: 'success',
+  message: 'İşlem başarılı',
+  data: { ... },
+  timestamp: '2024-01-01T00:00:00.000Z'
+}
+```
+
+### Hata Response
+```javascript
+{
+  success: false,
+  status: 'fail' | 'error',
+  message: 'Hata mesajı',
+  code: 'ERROR_CODE',
+  details: { ... },
+  timestamp: '2024-01-01T00:00:00.000Z'
+}
+```
+
+### Liste Response
+```javascript
+{
+  success: true,
+  status: 'success',
+  message: 'Liste başarıyla alındı',
+  data: {
+    items: [...],
+    count: 10,
+    total: 10
+  }
+}
+```
+
+### Helper Fonksiyonları
+- `sendSuccess(res, data, message, statusCode)` - Başarılı response
+- `sendCreated(res, data, message)` - 201 Created
+- `sendError(res, message, statusCode, code, details)` - Hata response
+- `sendList(res, data, message, total)` - Liste response (standart format: `{ items, count, total }`)
+- `sendNotFound(res, message)` - 404 Not Found
+- `sendUnauthorized(res, message)` - 401 Unauthorized
+- `sendForbidden(res, message)` - 403 Forbidden
+
+### Response Format Tutarlılığı
+- **TÜM API endpoint'leri** standart response helper'ları kullanmalı
+- ❌ `res.json({ ... })` direkt kullanma (sadece `/api/health` gibi özel durumlar için)
+- ✅ `sendList()`, `sendSuccess()`, `sendError()` kullan
+- Frontend'de response parsing: Tüm liste endpoint'lerinde `getListItems(res.data)` helper'ı kullan
+- `getListItems()` helper'ı hem standart format (`res.data.data.items`) hem de legacy format (`res.data`) için uyumlu çalışır
+
+### Endpoint Response Format Mapping
+**Standart Format (sendList/sendSuccess kullanan):**
+- `/api/brands` → `res.data.data.items`
+- `/api/brands/:brandId/kpi-mappings` → `res.data.data.items`
+- `/api/kpis/details` → `res.data.data.items`
+- `/api/kpis/cumulative_sources` → `res.data.data.items` ✅
+- `/api/kpis/formulas` → `res.data.data.items` ✅
+- `/api/reports/daily` → `res.data.data.items` ✅
+- `/api/reports/monthly` → `res.data.data.items` ✅
+- `/api/targets` → `res.data.data.items` ✅
+- `/api/targets/yearly` → `res.data.data.items`
+- `/api/reports/monthly/user` → `res.data.data.items`
+- `/api/admin/*` → `res.data.data.items` veya `res.data.data`
+
+**Özel Format (liste değil, özel response formatı):**
+- `/api/health` → `res.data` (`{ status: 'ok' }`)
+- `/api/me` → `res.data` (`{ user, role }`)
+
+**Not:** Tüm GET liste endpoint'leri artık standart format kullanıyor. Frontend'de `getListItems()` helper'ı ile parse edilmeli.
+
+---
+
+## 🎨 Frontend Component Patterns
+
+### React Component Structure
+```typescript
+import React, { useState, useEffect } from 'react';
+import { api } from '../lib/axiosClient';
+
+type Props = {
+  brandId: string;
+  onSuccess?: () => void;
+};
+
+export default function ComponentName({ brandId, onSuccess }: Props) {
+  const [data, setData] = useState<DataType[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Data fetching logic
+  }, [brandId]);
+
+  return (
+    <div className="space-y-4">
+      {/* Component JSX */}
+    </div>
+  );
+}
+```
+
+### Astro Island Pattern
+- Astro islands için component isimlerinde `*Island.tsx` suffix kullan
+- Client-side interactivity için `client:load` veya `client:visible` directive kullan
+- Props'ları Astro sayfasından geçir
+
+### Custom Hooks Pattern
+```typescript
+export function useCustomHook() {
+  const [state, setState] = useState<StateType>();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    // Fetch logic
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  return { state, isLoading, error, refetch: fetchData };
+}
+```
+
+### TanStack Query Usage
+```typescript
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { getBrands, createBrand } from '../services/api';
+
+// Query
+const { data, isLoading, error } = useQuery({
+  queryKey: ['brands', brandCategory],
+  queryFn: () => getBrands({ brandCategory }),
+});
+
+// Mutation
+const mutation = useMutation({
+  mutationFn: createBrand,
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['brands'] });
+  },
+});
+```
+
+---
+
+## 🗄️ Database Patterns
+
+### Migration Dosyaları
+- Migration dosyalarını `supabase/migrations/` altında numaralı olarak oluştur
+- Format: `NNN_descriptive_name.sql`
+- Her migration'da `BEGIN;` ve `COMMIT;` kullan
+- Geriye dönük uyumluluk için `IF NOT EXISTS` ve `IF EXISTS` kontrolleri ekle
+
+### Tablo İsimlendirme
+- Tablo isimleri: `snake_case`, çoğul (örn: `kpis`, `user_brands`, `kpi_reports`)
+- Primary key: `id` (UUID veya serial)
+- Foreign keys: `{table}_id` formatında (örn: `user_id`, `brand_id`, `kpi_id`)
+- Timestamps: `created_at`, `updated_at` (timestamp with time zone)
+
+### RLS Policies
+- Her tablo için RLS enable et: `ALTER TABLE ... ENABLE ROW LEVEL SECURITY;`
+- Policy isimleri açıklayıcı olsun (örn: `"Users can view their own brands"`)
+- User-specific data için `user_id = auth.uid()` kontrolü ekle
+- Admin erişimi için role kontrolü ekle
+
+### Query Patterns
+```javascript
+// User-specific query
+const { data, error } = await supabase
+  .from('user_brands')
+  .select('*')
+  .eq('user_id', req.user.id);
+
+// Admin query (service role client)
+const { data, error } = await supabase
+  .from('kpis')
+  .select('*')
+  .order('created_at', { ascending: false });
+```
+
+---
+
+## 🧪 Testing Patterns
+
+### Backend Tests
+- Test dosyaları: `**/__tests__/**/*.test.js`
+- Jest kullan, `supertest` ile API testleri yap
+- Test environment için `NODE_ENV=test` set et
+- Test data cleanup yap
+
+### Frontend Tests
+- Vitest kullan
+- Test dosyaları: `**/__tests__/**/*.test.ts` veya `*.test.tsx`
+- React Testing Library kullan component testleri için
+
+---
+
+## 🚨 Error Handling Patterns
+
+### Backend Error Handling
+```javascript
+// Async route handler
+router.get('/endpoint', requireAuth, catchAsync(async (req, res) => {
+  const { data, error } = await supabase.from('table').select('*');
+  
+  if (error) {
+    throw new AppError('Hata mesajı', 500, 'ERROR_CODE');
+  }
+  
+  return sendSuccess(res, data, 'Başarılı mesaj');
+}));
+```
+
+### Frontend Error Handling
+```typescript
+try {
+  const data = await api.get('/endpoint');
+  // Success handling
+} catch (error: any) {
+  const message = error?.response?.data?.message || 'Hata oluştu';
+  setError(message);
+  // Toast göster
+}
+```
+
+### Axios Interceptor
+- Global error handling için `axiosClient.ts` içindeki interceptor'ı kullan
+- **Request Interceptor**: Token'ı otomatik ekler (localStorage > Supabase session)
+- **Response Interceptor (Success)**: Başarı mesajlarını toast ile gösterir
+- **Response Interceptor (Error)**:
+  - 401 hatalarında otomatik token refresh dener (sadece bir kez, `__retry` flag ile)
+  - Refresh başarısızsa `/login` sayfasına yönlendirir
+  - `/me` endpoint'i için 401 hatası global yönlendirme yapmaz
+  - Toast notification'ları otomatik gösterir (bazı endpoint'ler için suppress edilir)
+  - Error details'i kopyalanabilir format'ta gösterir
+
+---
+
+## 📝 Code Style Guidelines
+
+### JavaScript/TypeScript
+- **Indentation**: 2 spaces
+- **Quotes**: Single quotes for JS, double quotes for JSX attributes
+- **Semicolons**: Kullan
+- **Trailing Commas**: ES6+ object/array'lerde kullan
+- **Arrow Functions**: Tercih et, ancak method'lar için function declaration da kabul edilebilir
+
+### Comments
+- Türkçe yorumlar kullan (kullanıcı mesajları için)
+- İngilizce yorumlar kullan (kod açıklamaları için)
+- JSDoc formatında function documentation ekle
+
+### Imports
+- External packages önce, sonra internal imports
+- Absolute imports için `@/` alias kullan (frontend)
+- Relative imports için `../` kullan
+
+### Console Usage
+- Production'da `console.log` kullanma
+- Development'ta debug için `console.log` kullan
+- Error logging için `console.error` kullan
+- Warning'ler için `console.warn` kullan
+
+---
+
+## 🔄 State Management
+
+### Frontend State
+- **Server State**: TanStack Query kullan
+- **Client State**: `useState` veya `useReducer` kullan
+- **Form State**: Controlled components pattern
+- **Global State**: Context API veya TanStack Query (tercih edilen)
+
+### Backend State
+- Stateless API design
+- Session state için JWT tokens
+- Database state için Supabase
+
+---
+
+## 📡 API Design Patterns
+
+### RESTful Endpoints
+- **GET**: Veri okuma
+- **POST**: Yeni kayıt oluşturma
+- **PUT**: Kayıt güncelleme (full update)
+- **DELETE**: Kayıt silme
+
+### Endpoint Naming
+- Resource-based naming (örn: `/api/brands`, `/api/kpis`)
+- Nested resources (örn: `/api/brands/:brandId/kpi-mappings`)
+- Query parameters for filtering (örn: `?year=2024&month=1`)
+
+### Request/Response
+- Request body: JSON format
+- Response: Standart format (yukarıdaki formatları kullan)
+- Error responses: HTTP status code + error code + message
+
+---
+
+## 🌍 Environment Variables
+
+### Backend (.env)
+```bash
+SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_ANON_KEY=eyJ... # Auth işlemleri için
+SUPABASE_SERVICE_ROLE_KEY=eyJ... # Admin işlemleri için (ASLA frontend'de kullanma!)
+SUPABASE_JWT_SECRET=... # Opsiyonel, offline doğrulama için
+FRONTEND_URL=http://localhost:4321 # Tek origin için
+FRONTEND_URLS=http://localhost:4321,https://app.example.com # Çoklu origin için (virgülle ayrılmış)
+PORT=4000
+NODE_ENV=development|production
+```
+
+### Frontend (.env)
+```bash
+PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+PUBLIC_SUPABASE_ANON_KEY=eyJ... # Sadece anon key, service role key ASLA kullanma!
+PUBLIC_API_URL=http://localhost:4000/api # Backend API URL
+```
+
+### Kritik Notlar
+- **Service Role Key**: Sadece backend'de kullanılır, ASLA frontend'e expose edilmez
+- **Anon Key**: Frontend ve backend auth işlemleri için kullanılır
+- **CORS**: Backend'de `FRONTEND_URL` (tek) veya `FRONTEND_URLS` (çoklu) desteklenir
+- **Production**: Frontend'de production'da Supabase env'leri eksikse fail-fast (hata fırlatır)
+- **Development**: Development'ta eksik env'ler için stub client'lar kullanılır
+
+---
+
+## 🎯 Projeye Özel Kurallar
+
+### KPI Yönetimi
+- KPI'lar için `only_cumulative` flag'ini kontrol et
+- Formula-based KPI'lar için `kpi_formulas` tablosunu kullan
+- Cumulative sources için `kpi_cumulative_sources` tablosunu kullan
+- Target calculation için `calculation_type` field'ını kontrol et
+
+### Brand Kategorileri
+- Brand kategorileri için `category_key` field'ını kullan
+- Frontend'de `brandCategories.ts` içindeki mapping'i kullan
+- Backend'de category filter için `category_key` query parameter'ı kullan
+
+### Raporlama
+- Monthly reports: `kpi_reports` tablosu
+- Daily reports: `kpi_daily_reports` tablosu
+- Target reports: `brand_kpi_targets` tablosu
+- User-specific reports için `user_id` filtresi zorunlu
+
+### Kullanıcı Rolleri
+- Roller: `admin`, `user`, ve dinamik roller (örn: "Genel Koordinatör")
+- Role normalization için `normalizeRole` fonksiyonunu kullan
+- Admin equivalent roller için `ADMIN_EQUIVALENT` set'ini kontrol et
+
+---
+
+## 🚫 Yapılmaması Gerekenler
+
+### Backend
+- ❌ Service role client'ı user-specific query'lerde kullanma
+- ❌ RLS bypass etme (gerekli durumlar hariç)
+- ❌ Raw SQL injection riski oluşturma
+- ❌ Hassas bilgileri error message'larda sızdırma
+- ❌ Validation yapmadan user input kabul etme
+- ❌ Service role key'i frontend'e expose etme
+- ❌ `res.json()` direkt kullanma (standart response helper'ları kullan)
+- ❌ CORS policy'lerini gevşetme (production'da sadece whitelist'teki origin'ler)
+
+### Frontend
+- ❌ API call'ları component içinde direkt yapma (service layer kullan)
+- ❌ Token'ları component state'inde saklama (localStorage veya Supabase session kullan)
+- ❌ Hardcoded API URL'leri kullanma (environment variables kullan)
+- ❌ Type safety'yi bypass etme (`any` kullanmaktan kaçın)
+- ❌ Console.log'ları production build'de bırakma
+- ❌ Service role key'i frontend'de kullanma (sadece anon key kullan)
+- ❌ Supabase client'ı her component'te yeniden oluşturma (lib/supabase.ts'den import et)
+
+### Database
+- ❌ Migration'ları geriye dönük uyumsuz yapma
+- ❌ RLS policy'leri bypass etme
+- ❌ Foreign key constraint'leri kaldırma
+- ❌ Index'leri gereksiz yere oluşturma
+
+---
+
+## ✅ Best Practices
+
+### Code Quality
+- ✅ DRY (Don't Repeat Yourself) prensibini uygula
+- ✅ Single Responsibility Principle
+- ✅ Error handling'i her zaman ekle
+- ✅ Input validation'ı her zaman yap
+- ✅ Type safety'yi koru (TypeScript)
+
+### Performance
+- ✅ Database query'lerini optimize et (index kullan)
+- ✅ Frontend'de lazy loading kullan
+- ✅ TanStack Query cache'ini etkili kullan
+- ✅ Bundle size'ı optimize et
+
+### Security
+- ✅ Tüm user input'ları validate et
+- ✅ SQL injection risklerini önle
+- ✅ XSS koruması için input sanitization yap
+- ✅ CORS policy'lerini doğru yapılandır
+- ✅ Rate limiting ekle
+
+### Maintainability
+- ✅ Kod yorumları ekle (karmaşık logic için)
+- ✅ Function'ları küçük ve odaklı tut
+- ✅ Consistent naming conventions kullan
+- ✅ Migration'ları version control'de tut
+
+---
+
+## 📚 Referans Dosyalar
+
+### Backend
+- `backend/src/utils/responseHelpers.js` - Response formatları
+- `backend/src/middleware/validation.js` - Validation schemas
+- `backend/src/middleware/errorHandler.js` - Error handling
+- `backend/src/middleware/auth.js` - Authentication
+- `backend/src/supabase.js` - Service role client (admin işlemleri)
+- `backend/src/supabaseAuth.js` - Auth client (token doğrulama)
+
+### Frontend
+- `frontend/src/services/api.ts` - API service functions
+- `frontend/src/lib/axiosClient.ts` - Axios configuration (interceptors, token refresh)
+- `frontend/src/lib/supabase.ts` - Supabase client (anon key, production fail-fast)
+- `frontend/src/lib/errorUtils.ts` - Error handling utilities
+- `frontend/src/types/kpi.ts` - Type definitions
+- `frontend/src/hooks/useKpiData.ts` - Custom hook example
+
+### Database
+- `supabase/migrations/` - Migration files
+- `combined_migrations.sql` - Combined migration reference
+
+---
+
+## 🔧 Development Workflow
+
+### Yeni Feature Ekleme
+1. Database migration oluştur (gerekirse)
+2. Backend route ve validation ekle
+3. Frontend service function ekle
+4. Frontend component/hook oluştur
+5. Test yaz (backend ve frontend)
+6. Documentation güncelle
+
+### Bug Fix
+1. Root cause analizi yap
+2. Test case oluştur
+3. Fix uygula
+4. Test'leri çalıştır
+5. Code review yap
+
+### Code Review Checklist
+- [ ] Error handling var mı?
+- [ ] Input validation yapılmış mı?
+- [ ] Type safety korunmuş mu?
+- [ ] Security best practices uygulanmış mı?
+- [ ] Code style guidelines'a uygun mu?
+- [ ] Test'ler yazılmış mı?
+- [ ] Documentation güncellenmiş mi?
+
+---
+
+## 📞 Yardım ve Destek
+
+Sorularınız için:
+- Proje README.md dosyasını kontrol edin
+- `docs/` klasöründeki dokümantasyonu inceleyin
+- Mevcut kod örneklerini referans alın
+
+---
+
+**Son Güncelleme**: 2024
+**Versiyon**: 1.0
+

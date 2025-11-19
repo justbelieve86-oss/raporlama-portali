@@ -1,0 +1,92 @@
+name: Diagnostics
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  diagnostics:
+    name: Diagnostics
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache frontend node_modules
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: frontend-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            frontend-${{ runner.os }}-
+
+      - name: Cache backend node_modules
+        uses: actions/cache@v4
+        with:
+          path: backend/node_modules
+          key: backend-${{ runner.os }}-${{ hashFiles('backend/package-lock.json') }}
+          restore-keys: |
+            backend-${{ runner.os }}-
+
+      - name: Frontend - Install dependencies
+        working-directory: frontend
+        continue-on-error: false
+        run: |
+          echo "📦 Installing frontend dependencies..."
+          npm ci
+
+      - name: Frontend - Lint
+        working-directory: frontend
+        continue-on-error: true
+        run: |
+          echo "🔍 Running frontend lint..."
+          npm run lint || echo "⚠️ Frontend lint completed with warnings"
+
+      - name: Frontend - Typecheck
+        working-directory: frontend
+        continue-on-error: true
+        run: |
+          echo "🔍 Running frontend typecheck..."
+          npm run typecheck || echo "⚠️ Frontend typecheck completed with warnings"
+
+      - name: Frontend - Audit
+        working-directory: frontend
+        continue-on-error: true
+        run: |
+          echo "🔍 Running frontend audit..."
+          npm run audit || echo "⚠️ Frontend audit completed with warnings"
+
+      - name: Backend - Install dependencies
+        working-directory: backend
+        continue-on-error: false
+        run: |
+          echo "📦 Installing backend dependencies..."
+          npm ci
+
+      - name: Backend - Lint
+        working-directory: backend
+        continue-on-error: true
+        run: |
+          echo "🔍 Running backend lint..."
+          npm run lint || echo "⚠️ Backend lint completed with warnings"
+
+      - name: Backend - Test
+        working-directory: backend
+        continue-on-error: true
+        run: |
+          echo "🧪 Running backend tests..."
+          NODE_ENV=test npm run test || echo "⚠️ Backend tests completed with failures (non-blocking)"
+
+      - name: Backend - Audit
+        working-directory: backend
+        continue-on-error: true
+        run: |
+          echo "🔍 Running backend audit..."
+          npm run audit || echo "⚠️ Backend audit completed with warnings"

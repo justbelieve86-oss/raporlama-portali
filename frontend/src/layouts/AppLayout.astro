@@ -1,0 +1,26 @@
+---
+// CSS imports - Astro bunları otomatik olarak optimize eder
+import '../styles/globals.css';
+import '../styles/app.css';
+import ClientErrorReporter from "../components/ClientErrorReporter";
+import GlobalToastContainer from "../components/GlobalToastContainer";
+import ErrorBoundary from "../components/ErrorBoundary";
+import IdleTimeoutHandler from "../components/IdleTimeoutHandler";
+---
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes" />
+    <meta name="theme-color" content="#ffffff" />
+    <title>Raporlama Portalı</title>
+  </head>
+  <body class="min-h-screen bg-background text-foreground transition-colors duration-300">
+    <ClientErrorReporter client:only="react" />
+    <GlobalToastContainer client:load />
+    <IdleTimeoutHandler client:only="react" />
+    <ErrorBoundary client:load>
+      <slot />
+    </ErrorBoundary>
+  </body>
+</html>

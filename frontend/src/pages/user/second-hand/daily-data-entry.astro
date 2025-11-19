@@ -1,0 +1,30 @@
+---
+import AppLayout from '@/layouts/AppLayout.astro';
+import Sidebar from '@/components/Sidebar';
+import PageHeader from '@/components/PageHeader';
+import DailyDataEntryIsland from '@/components/DailyDataEntryIsland';
+---
+
+<AppLayout title="2. El Veri Girişi - Günlük">
+  <div class="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <!-- Sidebar -->
+    <Sidebar role="user" client:only="react" />
+
+    <!-- Main Content Area -->
+    <div class="content-root flex-1 flex flex-col">
+      <!-- Page Header -->
+      <PageHeader client:only="react">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">2. El Veri Girişi - Günlük</h1>
+          <p class="text-sm text-gray-600 mt-1">İçerik şimdilik boş.</p>
+        </div>
+      </PageHeader>
+
+      <!-- Main Content -->
+      <main class="flex-1 p-6 space-y-8 overflow-y-auto">
+        <!-- Günlük KPI Veri Girişi (2. El) -->
+        <DailyDataEntryIsland client:only="react" categoryFilter="2. El Satış - Günlük KPI" brandCategory="ikinci-el-markalari" />
+      </main>
+    </div>
+  </div>
+</AppLayout>

@@ -1,0 +1,34 @@
+---
+import AppLayout from '@/layouts/AppLayout.astro';
+import Sidebar from '@/components/Sidebar';
+import PageHeader from '@/components/PageHeader';
+import SalesDashboardIsland from '@/components/SalesDashboardIsland';
+---
+
+<AppLayout title="Satış Dashboard">
+  <div class="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 transition-colors duration-300">
+    <!-- Sidebar -->
+    <Sidebar role="user" client:only="react" />
+
+    <!-- Main Content Area -->
+    <div class="content-root flex-1 flex flex-col">
+      <!-- Page Header -->
+      <PageHeader client:only="react">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Satış Dashboard</h1>
+          <p class="text-sm text-gray-600 mt-1">Satış özetleri ve performans göstergeleri</p>
+        </div>
+      </PageHeader>
+
+      <!-- Main Content -->
+      <main class="flex-1 p-6 space-y-8 overflow-y-auto">
+        <!-- Dashboard Content -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <main class="flex-1 overflow-y-auto p-6">
+            <SalesDashboardIsland client:only="react" categoryFilter="Satış - Aylık KPI" />
+          </main>
+        </div>
+      </main>
+    </div>
+  </div>
+</AppLayout>

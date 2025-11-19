@@ -1,0 +1,134 @@
+---
+import AppLayout from '@/layouts/AppLayout.astro';
+import Sidebar from '@/components/Sidebar';
+import PageHeader from '@/components/PageHeader';
+import BrandManagement from '@/components/BrandManagement';
+---
+
+<AppLayout title="Marka Yönetimi - Admin Panel">
+  <div class="flex h-screen bg-gray-50">
+    <!-- Sidebar -->
+    <Sidebar role="admin" client:only="react" />
+    
+   <!-- Main Content Area -->
+    <div class="content-root flex-1 flex flex-col">
+      <!-- Page Header -->
+      <PageHeader client:only="react">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Marka Yönetimi</h1>
+          <p class="text-sm text-gray-600 mt-1">Sistem markalarını ekleyin, düzenleyin ve yönetin. Marka bilgilerini güncel tutun.</p>
+        </div>
+      </PageHeader>
+
+      <!-- Main Content Area -->
+      <main class="flex-1 overflow-y-auto p-6 space-y-6">
+        <!-- Tıklanabilir Sekmeli Navbar -->
+        <nav class="bg-white rounded-xl shadow-sm border border-gray-200">
+          <div class="px-4 pt-4">
+            <h2 class="text-lg font-semibold text-gray-800">Satış</h2>
+          </div>
+          <div role="tablist" aria-label="Satış sekmeleri" class="mt-3 px-4 flex gap-2 border-t border-gray-200">
+            <button
+              role="tab"
+              id="tab-satis-markalari"
+              data-tab="satis-markalari"
+              aria-selected="true"
+              class="px-4 py-2 text-sm rounded-t-lg border border-b-0 bg-white text-gray-900 shadow-sm"
+            >Satış Markaları</button>
+            <button
+              role="tab"
+              id="tab-kiralama-markalari"
+              data-tab="kiralama-markalari"
+              aria-selected="false"
+              class="px-4 py-2 text-sm rounded-t-lg border border-b-0 bg-gray-100 text-gray-700 hover:bg-gray-200"
+            >Kiralama Markaları</button>
+            <button
+              role="tab"
+              id="tab-ikinci-el-markalari"
+              data-tab="ikinci-el-markalari"
+              aria-selected="false"
+              class="px-4 py-2 text-sm rounded-t-lg border border-b-0 bg-gray-100 text-gray-700 hover:bg-gray-200"
+            >2.el Markaları</button>
+            <button
+              role="tab"
+              id="tab-ekspertiz-markalari"
+              data-tab="ekspertiz-markalari"
+              aria-selected="false"
+              class="px-4 py-2 text-sm rounded-t-lg border border-b-0 bg-gray-100 text-gray-700 hover:bg-gray-200"
+            >Ekspertiz Markaları</button>
+          </div>
+        </nav>
+
+        <!-- Sekme İçerikleri -->
+        <section role="tabpanel" data-content="satis-markalari" aria-labelledby="tab-satis-markalari" class="bg-white rounded-b-xl shadow-sm border border-gray-200 p-4">
+          <!-- Marka listesi bu kırılım altında -->
+          <BrandManagement client:only="react" />
+        </section>
+
+        <section role="tabpanel" data-content="kiralama-markalari" aria-labelledby="tab-kiralama-markalari" class="bg-white rounded-b-xl shadow-sm border border-gray-200 p-4 hidden">
+          <!-- Kiralama Markaları: Satış Markaları ile aynı sayfa düzeni -->
+          <BrandManagement client:only="react" />
+        </section>
+
+        <section role="tabpanel" data-content="ikinci-el-markalari" aria-labelledby="tab-ikinci-el-markalari" class="bg-white rounded-b-xl shadow-sm border border-gray-200 p-4 hidden">
+          <!-- 2.el Markaları: Diğer kırılımlar ile aynı sayfa düzeni -->
+          <BrandManagement client:only="react" />
+        </section>
+
+        <section role="tabpanel" data-content="ekspertiz-markalari" aria-labelledby="tab-ekspertiz-markalari" class="bg-white rounded-b-xl shadow-sm border border-gray-200 p-4 hidden">
+          <!-- Ekspertiz Markaları: Diğer kırılımlar ile aynı sayfa düzeni -->
+          <BrandManagement client:only="react" />
+        </section>
+        <script>
+          document.addEventListener('DOMContentLoaded', () => {
+            const tabButtons = document.querySelectorAll('button[role="tab"][data-tab]');
+            const panels = document.querySelectorAll('section[role="tabpanel"][data-content]');
+
+            function activateTab(name) {
+              try {
+                if (name === 'satis-markalari') {
+                  localStorage.setItem('brandCategory', 'satis-markalari');
+                  window.dispatchEvent(new CustomEvent('brandCategory:selected', { detail: { brandCategory: 'satis-markalari' } }));
+                } else if (name === 'kiralama-markalari') {
+                  localStorage.setItem('brandCategory', 'kiralama-markalari');
+                  window.dispatchEvent(new CustomEvent('brandCategory:selected', { detail: { brandCategory: 'kiralama-markalari' } }));
+                } else if (name === 'ikinci-el-markalari') {
+                  localStorage.setItem('brandCategory', 'ikinci-el-markalari');
+                  window.dispatchEvent(new CustomEvent('brandCategory:selected', { detail: { brandCategory: 'ikinci-el-markalari' } }));
+                } else if (name === 'ekspertiz-markalari') {
+                  localStorage.setItem('brandCategory', 'ekspertiz-markalari');
+                  window.dispatchEvent(new CustomEvent('brandCategory:selected', { detail: { brandCategory: 'ekspertiz-markalari' } }));
+                } else {
+                  localStorage.removeItem('brandCategory');
+                  window.dispatchEvent(new CustomEvent('brandCategory:selected', { detail: { brandCategory: null } }));
+                }
+              } catch {
+                // localStorage erişim hatası - sessizce yoksay
+              }
+              tabButtons.forEach((btn) => {
+                const isActive = btn.getAttribute('data-tab') === name;
+                btn.setAttribute('aria-selected', String(isActive));
+                btn.classList.toggle('bg-white', isActive);
+                btn.classList.toggle('text-gray-900', isActive);
+                btn.classList.toggle('shadow-sm', isActive);
+                btn.classList.toggle('bg-gray-100', !isActive);
+                btn.classList.toggle('text-gray-700', !isActive);
+              });
+              panels.forEach((panel) => {
+                const show = panel.getAttribute('data-content') === name;
+                panel.classList.toggle('hidden', !show);
+              });
+            }
+
+            tabButtons.forEach((btn) => {
+              btn.addEventListener('click', () => activateTab(btn.getAttribute('data-tab')));
+            });
+
+            // Varsayılan aktif sekme: satis-markalari
+            activateTab('satis-markalari');
+          });
+        </script>
+      </main>
+    </div>
+  </div>
+</AppLayout>
