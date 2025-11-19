@@ -47,7 +47,7 @@ jobs:
         continue-on-error: true
 
       - name: Run tests with coverage
-        run: npm run test:coverage || npm run test
+        run: npm run test:coverage
         continue-on-error: true
 
       - name: Check coverage file exists
