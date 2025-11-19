@@ -16,7 +16,7 @@ export default function BrandSelectIsland() {
       try {
         const cat = 'satis-markalari';
         const res = await api.get('/brands', { params: { brandCategory: cat } });
-        const items = getListItems<any>(res.data);
+        const items = getListItems<{ id: string; name: string }>(res.data);
         let working = items;
         if ((cat ?? '').trim() && items.length === 0) {
           // Backend filtreli boş dönerse, filtresiz listeyi alıp istemci tarafında uygula

@@ -5,7 +5,7 @@
  * This is a helper script - manual review is still required
  */
 
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { glob } from 'glob';
 
 const files = glob.sync('src/**/*.{ts,tsx}', { ignore: ['node_modules/**', 'dist/**', '**/*.test.ts', '**/*.test.tsx'] });

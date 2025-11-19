@@ -105,8 +105,7 @@ export default function AuthGuard() {
         clearTimeout(redirectTimeout);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // Intentionally empty - only run on mount
 
   if (error) {
     return (

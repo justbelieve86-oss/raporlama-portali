@@ -117,7 +117,7 @@ export default function BrandManagement({ isVisible: propIsVisible = true }: Bra
       name: newBrand.name!,
       description: newBrand.description || '',
       status: (newBrand.status as BrandStatus) || 'aktif',
-      category_key: (newBrand as any).category_key || undefined,
+      category_key: newBrand.category_key || undefined,
     });
     // Optimistic update
     setBrands((prev) => [brand, ...prev]);
@@ -144,7 +144,7 @@ export default function BrandManagement({ isVisible: propIsVisible = true }: Bra
       name: selectedBrand.name,
       description: selectedBrand.description,
       status: selectedBrand.status as BrandStatus,
-      category_key: (selectedBrand as any).category_key ? (selectedBrand as any).category_key : undefined,
+      category_key: selectedBrand.category_key || undefined,
     });
     setBrands((prev) => prev.map((b) => (b.id === brand.id ? brand : b)));
     setIsEditModalOpen(false);
@@ -166,7 +166,7 @@ export default function BrandManagement({ isVisible: propIsVisible = true }: Bra
   const handleAddModel = async () => {
     if (!newModel.name || !selectedBrandForModels) return;
     try {
-      const { model } = await adminCreateModel(selectedBrandForModels.id, {
+      await adminCreateModel(selectedBrandForModels.id, {
         name: newModel.name!,
         description: '',
         status: (newModel.status as 'aktif' | 'pasif' | 'kayitli') || 'aktif',
@@ -585,7 +585,7 @@ export default function BrandManagement({ isVisible: propIsVisible = true }: Bra
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
             <select
-              value={(newBrand as any).category_key || ''}
+              value={newBrand.category_key || ''}
               onChange={(e) => setNewBrand({ ...newBrand, category_key: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -640,7 +640,7 @@ export default function BrandManagement({ isVisible: propIsVisible = true }: Bra
             <div>
               <label className="block text sm font-medium text-gray-700 mb-1">Kategori</label>
               <select
-                value={(selectedBrand as any).category_key || ''}
+                value={selectedBrand.category_key || ''}
                 onChange={(e) => setSelectedBrand({ ...selectedBrand, category_key: e.target.value || undefined })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >

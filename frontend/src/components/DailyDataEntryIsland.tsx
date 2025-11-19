@@ -21,7 +21,7 @@ import { CSS } from '@dnd-kit/utilities';
 import DevDiagnosticsPanel from './DevDiagnosticsPanel';
 import { getListItems } from '../utils/apiList';
 import { getBrands, getBrandKpis, getKpiCumulativeSources, getKpiFormulas, getKpiMonthlyReports, getKpiDailyReports, getBrandKpiTargets, saveKpiDailyReport, saveBrandKpiMonthlyTarget, saveKpiReport, deleteBrandKpiMapping, getKpiDetails } from '../services/api';
-import type { Kpi, KpiFormula, KpiDetail, KpiCumulativeSource, MonthlyReport } from '../types/api';
+import type { Kpi, KpiFormula, KpiDetail, KpiCumulativeSource } from '../types/api';
 import KpiAddFormIsland from './KpiAddFormIsland';
 import AutoSaveToggle from './AutoSaveToggle';
 import type { BrandCategoryKey } from '../lib/brandCategories';
@@ -143,7 +143,7 @@ export default function DailyDataEntryIsland({ categoryFilter, brandCategory = '
   const [allKpis, setAllKpis] = useState<Kpi[]>([]);
   const [orderedKpis, setOrderedKpis] = useState<Kpi[]>([]);
   const [isOrderingLoaded, setIsOrderingLoaded] = useState<boolean>(false);
-  const [isSavingOrder, setIsSavingOrder] = useState<boolean>(false);
+  const [_isSavingOrder, setIsSavingOrder] = useState<boolean>(false);
   const [values, setValues] = useState<Record<string, Record<number, number>>>({}); // kpiId -> day -> value
   const [targets, setTargets] = useState<Record<string, number>>({}); // kpiId -> target value (brand/year scoped)
   const [loading, setLoading] = useState<boolean>(false);
@@ -245,8 +245,8 @@ export default function DailyDataEntryIsland({ categoryFilter, brandCategory = '
       setValues(prev => {
         const next = { ...prev };
         Object.entries(cachedValues).forEach(([kpiId, byDay]) => {
-          if (!next[kpiId]) next[kpiId] = {} as any;
-          Object.entries(byDay as any).forEach(([d, val]) => {
+          if (!next[kpiId]) next[kpiId] = {} as Record<number, number>;
+          Object.entries(byDay as Record<string, unknown>).forEach(([d, val]) => {
             const dayNum = Number(d);
             if (next[kpiId][dayNum] == null) next[kpiId][dayNum] = Number(val);
           });
@@ -317,7 +317,7 @@ export default function DailyDataEntryIsland({ categoryFilter, brandCategory = '
       // getBrandKpis artık { kpis: [...] } formatında döner (sendList formatı)
       const kpiRows = resp?.kpis || [];
 
-      let next: Kpi[] = (kpiRows || []).map((r) => ({ 
+      const next: Kpi[] = (kpiRows || []).map((r) => ({ 
         id: String(r.id || ''), 
         name: String(r.name || ''), 
         category: String(r.category || ''), 
@@ -494,7 +494,7 @@ export default function DailyDataEntryIsland({ categoryFilter, brandCategory = '
     } finally {
       setLoading(false);
     }
-  }, [year, month]);
+  }, [year, month, categoryFilter]);
 
   // Dışarıdan KPI eklendiğinde listeyi yenile
   useEffect(() => {
@@ -508,10 +508,10 @@ export default function DailyDataEntryIsland({ categoryFilter, brandCategory = '
       } catch {}
     };
     if (typeof window !== 'undefined') {
-      window.addEventListener('brand-kpi-added', handler as any);
+      window.addEventListener('brand-kpi-added', handler as (e: Event) => void);
     }
     return () => {
-      if (typeof window !== 'undefined') window.removeEventListener('brand-kpi-added', handler as any);
+      if (typeof window !== 'undefined') window.removeEventListener('brand-kpi-added', handler as (e: Event) => void);
     };
   }, [brandId, loadKpis]);
 
@@ -620,7 +620,7 @@ export default function DailyDataEntryIsland({ categoryFilter, brandCategory = '
       }
     };
     loadKpiOrdering();
-  }, [brandId, kpis, isOrderingLoaded]);
+  }, [brandId, kpis, isOrderingLoaded, orderStorageKey]);
 
   const loadTargets = useCallback(async (brandIdStr: string, yearNum: number, targetKpiIds?: string[]) => {
     if (!brandIdStr) return;
@@ -1222,7 +1222,7 @@ export default function DailyDataEntryIsland({ categoryFilter, brandCategory = '
                             targetVal={targetVal}
                             cumulative={cumulative[k.id] || 0}
                             cumulativeOverride={cumulativeOverrides[k.id] ?? 0}
-                            unit={unitById[k.id] ?? (k as any).unit}
+                            unit={unitById[k.id] ?? k.unit}
                             onChangeCell={onChangeCell}
                             onChangeCumulativeOverride={onChangeCumulativeOverride}
                             onChangeTarget={onChangeTarget}
@@ -1251,8 +1251,8 @@ export default function DailyDataEntryIsland({ categoryFilter, brandCategory = '
   );
 }
 
-// Sortable row component for daily-entry grid
-function SortableDailyRow({
+// Sortable row component for daily-entry grid (unused - kept for future use)
+function _SortableDailyRow({
   kpi,
   index,
   day,
@@ -1752,7 +1752,7 @@ function SortableDailyCard({
 }
 
 // Re-render azaltmak için shallow karşılaştırma
-const MemoSortableDailyCard = React.memo(SortableDailyCard, (prev, next) => {
+const _MemoSortableDailyCard = React.memo(SortableDailyCard, (prev, next) => {
   return (
     prev.kpi.id === next.kpi.id &&
     prev.kpi.name === next.kpi.name &&
@@ -1815,13 +1815,13 @@ function SortableDailyTableRow({
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition: isDragging ? 'none' : transition,
-  } as any;
+  };
 
   const isTarget = kpi.calculation_type === 'target' || kpi.has_target_data === true;
   const calcLabel = kpi.calculation_type === 'percentage' ? 'Yüzde' : kpi.calculation_type === 'cumulative' ? 'Kümülatif' : kpi.calculation_type === 'formula' ? 'Formül' : isTarget ? 'Hedef' : 'Doğrudan';
   const progressTarget = isTarget && targetVal && targetVal > 0 ? targetVal : null;
   const currentCum = kpi.only_cumulative === true ? (Number(cumulativeOverride) || 0) : (Number(cumulative) || 0);
-  const { unitNorm, isTl, isPercent, unitLabel } = getUnitMeta(unit);
+  const { isTl: _isTl } = getUnitMeta(unit);
   const progressPct = progressTarget ? Math.max(0, Math.round((currentCum / progressTarget) * 100)) : null;
 
   const dailyInputId = `daily-${kpi.id}-${day}`;
@@ -1860,8 +1860,9 @@ function SortableDailyTableRow({
           ) : isAutoDaily ? (
             <span className={`ml-1 ${pillClass('blue')} text-[10px]`}>Otomatik</span>
           ) : null}
+          {/* Override active check - kept for future use */}
           {(() => {
-            const overrideActive = (kpi.only_cumulative === true) || (cumulativeOverride ?? 0) !== (currentCum || 0);
+            const _overrideActive = (kpi.only_cumulative === true) || (cumulativeOverride ?? 0) !== (currentCum || 0);
             return null;
           })()}
           <div className="ml-auto flex items-center gap-1">

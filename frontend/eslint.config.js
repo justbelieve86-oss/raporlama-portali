@@ -63,6 +63,7 @@ export default [
       'dist/**',
       '.astro/**',
       '.vercel/**',
+      'coverage/**',
       '**/*.test.ts',
       '**/*.test.tsx',
       '**/*.test.js',

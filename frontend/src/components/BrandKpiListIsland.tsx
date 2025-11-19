@@ -284,7 +284,8 @@ function BrandKpiListIslandContent({ brandId, year, reloadToken = 0, autoSave = 
       logger.error('Target save error', e);
       setError(toUserFriendlyError(e));
     }
-  }, [brandIdStr, year, kpis]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brandIdStr, year]);
 
   // Debounced kaydetme yardımcıları
   function scheduleSaveTarget(kpiId: string, raw: string, immediate = false) {

@@ -96,6 +96,7 @@ export default function AddUserForm({ onSuccess, onCancel, className }: AddUserF
     }
     loadOptions();
     return () => { mounted = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const validateForm = (): boolean => {
